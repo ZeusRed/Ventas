@@ -3,14 +3,14 @@ import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { InputTextarea } from "primereact/inputtextarea";
 import MapSelector from "./MapSelector";
-
+import PaymentComponent from "../Components/payment";
 interface Product {
   id: number;
   name: string;
   image: string;
   price: number;
 }
-
+const phoneNumber = "5215951062215"; // Número de WhatsApp para enviar pedidos
 const PRODUCTS: Product[] = [
   { id: 1, name: "Taco", image: "/images/taco1.jpg", price: 35 },
   { id: 2, name: "Quesadilla", image: "/images/quesadilla.jpg", price: 35 },
@@ -91,7 +91,9 @@ const FormComponent: React.FC = () => {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [addressDetail, setAddressDetail] = useState("");
   const [mapPosition, setMapPosition] = useState(MAP_DEFAULT_POSITION);
-
+  const [formaPago, setFormaPago] = useState("efectivo");
+  const [montoPago, setMontoPago] = useState<string | number>("");
+  const [cambio, setCambio] = useState(0);
   const toggleProduct = (product: Product) => {
     const exists = selectedProducts.find((p) => p.id === product.id);
     if (exists) {
@@ -125,15 +127,34 @@ const FormComponent: React.FC = () => {
       alert("Por favor ingresa el detalle de la dirección.");
       return;
     }
-
+    if (selectedProducts.length === 0) {
+      alert("Por favor selecciona al menos un producto.");
+      return;
+    }
+    if (total <= 0) {
+      alert("El total del pedido debe ser mayor a 0.");
+      return;
+    }
+    if (
+      formaPago === "efectivo" &&
+      (montoPago === "" || Number(montoPago) <= 0)
+    ) {
+      alert("Por favor ingresa el monto recibido.");
+      return;
+    }
+    if (formaPago === "efectivo" && cambio < 0) {
+      alert("El monto recibido debe ser mayor o igual al total del pedido.");
+      return;
+    }
+    
     const orderLines = selectedProducts
       .map((p) => `${p.name} x ${quantities[p.id] || 0}`)
       .join("\n");
 
     const locationUrl = `https://www.google.com/maps?q=${mapPosition.lat},${mapPosition.lng}`;
-    const message = `Pedido:\n${orderLines}\n\nDirección: ${addressDetail}\nUbicación: ${locationUrl}\nTotal: $${total}`;
 
-    const phoneNumber = "5215951062215";
+    const message = `Pedido:\n${orderLines}\n\nDirección: ${addressDetail}\nUbicación: ${locationUrl}\nTotal: $${total}\nForma de pago: ${formaPago}\n\nEn un momento te confirmaremos el estado de tu pedido.`;
+
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
       message
     )}`;
@@ -175,7 +196,9 @@ const FormComponent: React.FC = () => {
             }}
           >
             {PRODUCTS.map((product) => {
-              const selected = selectedProducts.some((p) => p.id === product.id);
+              const selected = selectedProducts.some(
+                (p) => p.id === product.id
+              );
               return (
                 <div
                   key={product.id}
@@ -261,7 +284,9 @@ const FormComponent: React.FC = () => {
                   }}
                 />
                 <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: "bold" }}>{product.name}</p>
+                  <p style={{ margin: 0, fontWeight: "bold" }}>
+                    {product.name}
+                  </p>
                   <p style={{ margin: 0 }}>${product.price}</p>
                 </div>
                 <QuantityInput
@@ -285,6 +310,34 @@ const FormComponent: React.FC = () => {
                 {mapPosition.lng.toFixed(4)}
               </p>
             </div>
+            <div style={{ marginBottom: 20 }}>
+              <h4 style={{ textAlign: "center" }}>Forma de pago</h4>
+              <select
+                style={{
+                  width: "100%",
+                  padding: 20,
+                  borderRadius: 4,
+                  height: 40,
+                  fontSize: 16,
+                  border: "1px solid #ccc",
+                }}
+                onChange={(e) => setFormaPago(e.target.value)}
+              >
+                <option value="efectivo">Efectivo</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="transferencia">Transferencia</option>
+              </select>
+            </div>
+            {/* Aquí puedes agregar el componente de pago si es necesario */}
+            <PaymentComponent
+              setFormaPago={setFormaPago}
+              setMontoPago={setMontoPago}
+              total={total}
+              formaPago={formaPago}
+              montoPago={montoPago}
+              setCambio={setCambio}
+              cambio={cambio}
+            />
 
             <div style={{ marginBottom: 20 }}>
               <h4 style={{ textAlign: "center" }}>Detalle de dirección</h4>
