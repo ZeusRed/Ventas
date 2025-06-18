@@ -11,8 +11,7 @@ interface PaymentComponentProps {
 }
 
 const PaymentComponent: React.FC<PaymentComponentProps> = ({
-  setFormaPago,
-  setMontoPago,
+   setMontoPago,
   total,
   formaPago,
   montoPago,
